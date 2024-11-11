@@ -16,8 +16,13 @@ export default {
             fontFamily: {
                 sans: ['Figtree', ...defaultTheme.fontFamily.sans],
             },
+            colors: {
+                // You can add custom colors here if needed
+            },
         },
     },
 
     plugins: [forms, typography],
+
+    darkMode: 'media', // or 'class' if you want to implement manual dark mode switching
 };

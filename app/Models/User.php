@@ -26,9 +26,18 @@ class User extends Authenticatable
      * @var array<int, string>
      */
     protected $fillable = [
-        'name',
+        'first_name',
+        'last_name',
         'email',
+        'phone_number',
+        'location',
+        'age',
         'password',
+        'registration_type',
+        'notifications_email',
+        'notifications_sms',
+        'password_set_token',
+        'password_set_token_expires_at'
     ];
 
     /**
@@ -57,11 +66,14 @@ class User extends Authenticatable
      *
      * @return array<string, string>
      */
-    protected function casts(): array
+    protected $casts = [
+        'email_verified_at' => 'datetime',
+        'password' => 'hashed',
+        'is_admin' => 'boolean',
+    ];
+
+    public function getIsAdminAttribute($value)
     {
-        return [
-            'email_verified_at' => 'datetime',
-            'password' => 'hashed',
-        ];
+        return (bool) $value;
     }
 }
