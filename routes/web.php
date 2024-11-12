@@ -9,13 +9,15 @@ use App\Http\Controllers\Admin\ReportController;
 use App\Http\Controllers\Admin\StaffController;
 use App\Http\Controllers\Admin\SettingsController;
 use App\Http\Controllers\Admin\CategoryController;
+use App\Http\Controllers\Admin\DynamicSettingsController;
+use App\Http\Controllers\Admin\SystemSettingsController;
+use App\Http\Controllers\Admin\ThemeSettingsController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
+use App\Http\Controllers\WelcomeController;
 
 // Public routes
-Route::get('/', function () {
-    return view('welcome');
-});
+Route::get('/', [WelcomeController::class, 'index'])->name('welcome');
 
 // Guest routes
 Route::middleware(['web', 'guest:admin'])->group(function () {
@@ -58,6 +60,36 @@ Route::middleware(['web', 'auth:admin'])->prefix('admin')->name('admin.')->group
     Route::prefix('settings')->name('settings.')->group(function () {
         Route::get('/account', [SettingsController::class, 'account'])->name('account');
         Route::get('/roles', [SettingsController::class, 'roles'])->name('roles');
+        Route::get('/notifications', [SettingsController::class, 'notifications'])->name('notifications');
+        Route::get('/dynamic', [SettingsController::class, 'dynamic'])->name('dynamic');
+
+        // Dynamic Settings API routes
+        Route::post('/countries', [DynamicSettingsController::class, 'storeCountry'])->name('countries.store');
+        Route::post('/regions', [DynamicSettingsController::class, 'storeRegion'])->name('regions.store');
+        Route::post('/locations', [DynamicSettingsController::class, 'storeLocation'])->name('locations.store');
+        Route::delete('/countries/{country}', [DynamicSettingsController::class, 'destroyCountry'])->name('countries.destroy');
+        Route::delete('/regions/{region}', [DynamicSettingsController::class, 'destroyRegion'])->name('regions.destroy');
+        Route::delete('/locations/{location}', [DynamicSettingsController::class, 'destroyLocation'])->name('locations.destroy');
+        Route::post('/google-places/search', [DynamicSettingsController::class, 'searchGooglePlaces'])->name('google-places.search');
+
+        // System Settings routes
+        Route::get('/system', [SystemSettingsController::class, 'index'])->name('system');
+        Route::post('/system/api-keys', [SystemSettingsController::class, 'updateApiKeys'])->name('system.api-keys');
+        Route::post('/system/company', [SystemSettingsController::class, 'updateCompany'])->name('system.company');
+        Route::post('/system/messages', [SystemSettingsController::class, 'updateMessages'])->name('system.messages');
+        Route::post('/system/countries', [SystemSettingsController::class, 'updateCountries'])->name('system.countries');
+        Route::get('/system/fetch-regions/{country}', [SystemSettingsController::class, 'fetchRegions'])->name('system.regions');
+
+        // Scripts Settings routes
+        Route::get('/scripts', [SettingsController::class, 'scripts'])->name('scripts');
+        Route::post('/scripts/recaptcha', [SettingsController::class, 'updateRecaptcha'])->name('scripts.recaptcha');
+        Route::post('/scripts/google-sso', [SettingsController::class, 'updateGoogleSSO'])->name('scripts.google-sso');
+        Route::post('/scripts/chatbot', [SettingsController::class, 'updateChatbot'])->name('scripts.chatbot');
+
+        // Theme Settings routes
+        Route::get('/theme', [ThemeSettingsController::class, 'index'])->name('theme');
+        Route::post('/theme/branding', [ThemeSettingsController::class, 'updateBranding'])->name('theme.branding');
+        Route::post('/theme/upload-image', [ThemeSettingsController::class, 'uploadImage'])->name('theme.upload-image');
     });
 
     // Setup completion route
@@ -79,6 +111,9 @@ Route::middleware(['web', 'auth:admin'])->prefix('admin')->name('admin.')->group
     Route::get('/settings/notifications', [SettingsController::class, 'notifications'])->name('settings.notifications');
     Route::put('/settings/notifications', [SettingsController::class, 'updateNotifications'])->name('settings.notifications.update');
     Route::post('/settings/notifications/test', [SettingsController::class, 'testNotifications'])->name('settings.notifications.test');
+
+    // SMTP routes
+    Route::put('/settings/smtp', [SettingsController::class, 'updateSmtp'])->name('settings.smtp.update');
 });
 
 // Regular user routes

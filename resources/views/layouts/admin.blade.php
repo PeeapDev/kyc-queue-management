@@ -13,6 +13,8 @@
 
     <!-- Scripts -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+
+    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
 </head>
 <body class="font-sans antialiased" x-data>
     <div class="min-h-screen bg-gray-50 dark:bg-gray-900">
@@ -21,7 +23,13 @@
             <div class="flex flex-col h-full">
                 <!-- Logo -->
                 <div class="flex items-center justify-center h-16 bg-blue-600">
-                    <span class="text-white text-lg font-bold">{{ config('app.name') }}</span>
+                    @if(isset($settings) && $settings->logo)
+                        <img src="{{ Storage::disk('public')->url($settings->logo) }}"
+                             alt="{{ $settings->site_title ?? config('app.name') }}"
+                             class="h-12 w-auto">
+                    @else
+                        <span class="text-white text-lg font-bold">{{ config('app.name') }}</span>
+                    @endif
                 </div>
 
                 <!-- Navigation -->
@@ -97,6 +105,15 @@
                             <a href="{{ route('admin.settings.notifications') }}" class="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
                                 SMS & Email Settings
                             </a>
+                            <a href="{{ route('admin.settings.scripts') }}" class="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
+                                Scripts Settings
+                            </a>
+                            <a href="{{ route('admin.settings.system') }}" class="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
+                                System Settings
+                            </a>
+                            <a href="{{ route('admin.settings.theme') }}" class="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
+                                Theme Settings
+                            </a>
                         </div>
                     </div>
                 </nav>
@@ -152,6 +169,7 @@
     </div>
 
     @stack('modals')
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
     @stack('scripts')
 </body>
 </html>

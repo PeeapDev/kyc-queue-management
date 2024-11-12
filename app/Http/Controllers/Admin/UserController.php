@@ -4,26 +4,31 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Models\Setting;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Log;
 use App\Mail\SetupPasswordNotification;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Http;
-use App\Models\Setting;
+use Illuminate\Support\Facades\DB;
 
 class UserController extends Controller
 {
     public function index()
     {
-        $users = User::latest()->paginate(10);
+        $users = User::latest()->get();
         return view('admin.users.index', compact('users'));
     }
 
     public function store(Request $request)
     {
         try {
+            DB::beginTransaction();
+
+            // Validate the request
             $validated = $request->validate([
                 'first_name' => 'required|string|max:255',
                 'last_name' => 'required|string|max:255',
@@ -39,6 +44,7 @@ class UserController extends Controller
             $token = Str::random(60);
             $tokenExpiry = Carbon::now()->addHours(24);
 
+            // Create user first
             $user = User::create([
                 'first_name' => $validated['first_name'],
                 'last_name' => $validated['last_name'],
@@ -60,15 +66,22 @@ class UserController extends Controller
                 ['token' => $token]
             );
 
-            // Send notifications if requested
+            $notificationErrors = [];
+
+            // Try to send email notification
             if ($request->notifications_email) {
-                Mail::to($user->email)->send(new SetupPasswordNotification($setupUrl));
+                try {
+                    Mail::to($user->email)->send(new SetupPasswordNotification($setupUrl));
+                } catch (\Exception $e) {
+                    Log::error('Email sending failed: ' . $e->getMessage());
+                    $notificationErrors[] = 'Email notification could not be sent.';
+                }
             }
 
+            // Try to send SMS notification
             if ($request->notifications_sms) {
-                // Check if Twilio credentials are set
-                if (config('services.twilio.sid') && config('services.twilio.token') && config('services.twilio.from')) {
-                    try {
+                try {
+                    if (config('services.twilio.sid') && config('services.twilio.token') && config('services.twilio.from')) {
                         $smsTemplate = Setting::get('welcome_sms_template', 'Welcome! Click here to set up your password: {link}');
                         $smsContent = str_replace(
                             ['{name}', '{link}'],
@@ -84,23 +97,38 @@ class UserController extends Controller
                             'To' => $user->phone_number,
                             'Body' => $smsContent,
                         ]);
-                    } catch (\Exception $e) {
-                        \Log::error('SMS sending failed: ' . $e->getMessage());
-                        // Continue execution even if SMS fails
                     }
-                } else {
-                    \Log::warning('Twilio credentials not configured');
+                } catch (\Exception $e) {
+                    Log::error('SMS sending failed: ' . $e->getMessage());
+                    $notificationErrors[] = 'SMS notification could not be sent.';
                 }
             }
 
+            DB::commit();
+
+            // Format the user data for the response
+            $userData = [
+                'id' => $user->id,
+                'name' => $user->first_name . ' ' . $user->last_name,
+                'email' => $user->email,
+                'registration_type' => $user->registration_type,
+                'created_at' => $user->created_at,
+                'phone_number' => $user->phone_number,
+                'location' => $user->location,
+                'age' => $user->age,
+            ];
+
+            // Return success response with any notification errors
             return response()->json([
                 'success' => true,
-                'message' => 'User created successfully. Setup instructions have been sent.',
-                'user' => $user
+                'message' => 'User created successfully.' .
+                            (count($notificationErrors) > 0 ? ' Note: ' . implode(' ', $notificationErrors) : ''),
+                'user' => $userData
             ]);
 
         } catch (\Exception $e) {
-            \Log::error('User creation error: ' . $e->getMessage());
+            DB::rollBack();
+            Log::error('User creation error: ' . $e->getMessage());
 
             return response()->json([
                 'success' => false,

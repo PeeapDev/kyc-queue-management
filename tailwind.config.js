@@ -24,5 +24,5 @@ export default {
 
     plugins: [forms, typography],
 
-    darkMode: 'media', // or 'class' if you want to implement manual dark mode switching
+    darkMode: 'class', // Enable manual dark mode switching
 };

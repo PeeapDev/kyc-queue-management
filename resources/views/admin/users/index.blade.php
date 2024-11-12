@@ -38,58 +38,49 @@
                     <tr>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Name</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Email</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Phone</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Location</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Registration Type</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Joined Date</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Actions</th>
                     </tr>
                 </thead>
                 <tbody class="bg-white divide-y divide-gray-200 dark:bg-gray-800 dark:divide-gray-700">
-                    <template x-if="filteredUsers.length === 0">
-                        <tr>
-                            <td colspan="5" class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 text-center">
-                                No users found
-                            </td>
-                        </tr>
-                    </template>
-                    <template x-for="user in filteredUsers" :key="user.id">
+                    @forelse($users as $user)
                         <tr>
                             <td class="px-6 py-4 whitespace-nowrap">
-                                <div class="text-sm font-medium text-gray-900 dark:text-white" x-text="user.name"></div>
+                                <div class="text-sm font-medium text-gray-900 dark:text-white">
+                                    {{ $user->first_name }} {{ $user->last_name }}
+                                </div>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
-                                <div class="text-sm text-gray-500 dark:text-gray-400" x-text="user.email"></div>
+                                <div class="text-sm text-gray-500 dark:text-gray-400">{{ $user->email }}</div>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
-                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full"
-                                      :class="user.registration_type === 'online' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'"
-                                      x-text="user.registration_type === 'online' ? 'Online Registration' : 'Staff Created'">
+                                <div class="text-sm text-gray-500 dark:text-gray-400">{{ $user->phone_number }}</div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="text-sm text-gray-500 dark:text-gray-400">{{ $user->location }}</div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full
+                                    {{ $user->registration_type === 'online' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800' }}">
+                                    {{ ucfirst($user->registration_type) }}
                                 </span>
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400" x-text="formatDate(user.created_at)"></td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                 <a href="#" class="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-600 mr-3">Edit</a>
                                 <a href="#" class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-600">Delete</a>
                             </td>
                         </tr>
-                    </template>
+                    @empty
+                        <tr>
+                            <td colspan="6" class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 text-center">
+                                No users found
+                            </td>
+                        </tr>
+                    @endforelse
                 </tbody>
             </table>
-        </div>
-
-        <div class="mt-4">
-            <div class="flex justify-between items-center">
-                <div class="text-sm text-gray-500 dark:text-gray-400">
-                    Showing <span x-text="paginationInfo.from"></span> to <span x-text="paginationInfo.to"></span> of <span x-text="paginationInfo.total"></span> entries
-                </div>
-                <div class="flex space-x-2">
-                    <button @click="previousPage"
-                            :disabled="currentPage === 1"
-                            class="px-3 py-1 rounded bg-gray-200 dark:bg-gray-700 disabled:opacity-50">Previous</button>
-                    <button @click="nextPage"
-                            :disabled="currentPage >= totalPages"
-                            class="px-3 py-1 rounded bg-gray-200 dark:bg-gray-700 disabled:opacity-50">Next</button>
-                </div>
-            </div>
         </div>
 
         <!-- Add User Modal -->
@@ -229,8 +220,11 @@
 <script>
 function userManagement() {
     return {
-        users: @json($users),
         showModal: false,
+        filters: {
+            onlineRegistration: true,
+            staffCreated: true
+        },
         newUser: {
             first_name: '',
             last_name: '',
@@ -240,58 +234,6 @@ function userManagement() {
             age: '',
             notifications_email: true,
             notifications_sms: true
-        },
-        filters: {
-            onlineRegistration: true,
-            staffCreated: true
-        },
-
-        get filteredUsers() {
-            return this.users.filter(user => {
-                const matchesSearch = user.name.toLowerCase().includes(this.search.toLowerCase()) ||
-                                    user.email.toLowerCase().includes(this.search.toLowerCase());
-
-                const matchesFilters = (this.filters.onlineRegistration && user.registration_type === 'online') ||
-                                     (this.filters.staffCreated && user.registration_type === 'staff');
-
-                return matchesSearch && matchesFilters;
-            });
-        },
-
-        get paginatedUsers() {
-            const start = (this.currentPage - 1) * this.perPage;
-            return this.filteredUsers.slice(start, start + this.perPage);
-        },
-
-        get totalPages() {
-            return Math.ceil(this.filteredUsers.length / this.perPage);
-        },
-
-        get paginationInfo() {
-            const total = this.filteredUsers.length;
-            const from = Math.min(((this.currentPage - 1) * this.perPage) + 1, total);
-            const to = Math.min(this.currentPage * this.perPage, total);
-            return { from, to, total };
-        },
-
-        formatDate(date) {
-            return new Date(date).toLocaleDateString('en-GB');
-        },
-
-        updateTable() {
-            this.currentPage = 1;
-        },
-
-        previousPage() {
-            if (this.currentPage > 1) {
-                this.currentPage--;
-            }
-        },
-
-        nextPage() {
-            if (this.currentPage < this.totalPages) {
-                this.currentPage++;
-            }
         },
 
         async submitUser() {
@@ -303,28 +245,14 @@ function userManagement() {
                         'X-CSRF-TOKEN': '{{ csrf_token() }}',
                         'Accept': 'application/json'
                     },
-                    body: JSON.stringify({
-                        first_name: this.newUser.first_name,
-                        last_name: this.newUser.last_name,
-                        email: this.newUser.email,
-                        phone_number: this.newUser.phone_number,
-                        location: this.newUser.location,
-                        age: this.newUser.age,
-                        registration_type: 'staff',
-                        notifications_email: this.newUser.notifications_email,
-                        notifications_sms: this.newUser.notifications_sms,
-                        send_email_notification: this.newUser.notifications_email,
-                        send_sms_notification: this.newUser.notifications_sms
-                    })
+                    body: JSON.stringify(this.newUser)
                 });
 
                 const data = await response.json();
 
                 if (data.success) {
-                    // Add the new user to the list
-                    this.users.unshift(data.user);
+                    // Close modal and reset form
                     this.showModal = false;
-                    // Reset form
                     this.newUser = {
                         first_name: '',
                         last_name: '',
@@ -335,6 +263,9 @@ function userManagement() {
                         notifications_email: true,
                         notifications_sms: true
                     };
+
+                    // Reload the page to show the new user
+                    window.location.reload();
                 } else {
                     alert(data.message || 'Error creating user');
                 }
