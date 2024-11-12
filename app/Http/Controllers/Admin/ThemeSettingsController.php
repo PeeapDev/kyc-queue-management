@@ -49,7 +49,8 @@ class ThemeSettingsController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Branding settings updated successfully',
-                'settings' => $settings
+                'settings' => $settings,
+                'logo_url' => $settings->logo ? Storage::disk('public')->url($settings->logo) : null
             ]);
 
         } catch (\Exception $e) {

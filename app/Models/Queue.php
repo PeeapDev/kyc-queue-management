@@ -3,28 +3,21 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Queue extends Model
 {
-    use HasFactory;
-
     protected $fillable = [
-        'token',
-        'customer_id',
-        'counter_id',
-        'service_type',
+        'queue_number',
+        'name',
+        'phone_number',
         'status',
-        'wait_time',
+        'counter_id'
     ];
 
-    public function customer()
+    public static function generateQueueNumber()
     {
-        return $this->belongsTo(Customer::class);
-    }
-
-    public function counter()
-    {
-        return $this->belongsTo(Counter::class);
+        $lastQueue = self::whereDate('created_at', today())->latest()->first();
+        $lastNumber = $lastQueue ? intval(substr($lastQueue->queue_number, 1)) : 0;
+        return 'Q' . str_pad($lastNumber + 1, 3, '0', STR_PAD_LEFT);
     }
 }

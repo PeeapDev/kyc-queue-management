@@ -10,37 +10,71 @@ class QueueController extends Controller
 {
     public function index()
     {
-        $queues = Queue::with(['customer', 'counter'])->latest()->paginate(10);
-        return view('admin.queues.index', compact('queues'));
+        $queueItems = Queue::orderBy('created_at', 'desc')->get();
+        return view('admin.queue.index', compact('queueItems'));
     }
 
     public function create()
     {
-        return view('admin.queues.create');
+        return view('admin.queue.create');
     }
 
     public function store(Request $request)
     {
-        // Implementation coming soon
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'phone_number' => 'required|string|max:20',
+        ]);
+
+        $queue = Queue::create([
+            'queue_number' => Queue::generateQueueNumber(),
+            'name' => $validated['name'],
+            'phone_number' => $validated['phone_number'],
+            'status' => 'waiting'
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Added to queue successfully',
+            'queue' => $queue
+        ]);
     }
 
-    public function show(Queue $queue)
+    public function updateStatus(Request $request, Queue $queue)
     {
-        return view('admin.queues.show', compact('queue'));
+        $validated = $request->validate([
+            'status' => 'required|in:waiting,serving,completed,cancelled',
+            'counter_id' => 'nullable|integer'
+        ]);
+
+        $queue->update($validated);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Queue status updated successfully',
+            'queue' => $queue
+        ]);
     }
 
-    public function edit(Queue $queue)
+    public function analytics()
     {
-        return view('admin.queues.edit', compact('queue'));
+        $analytics = [
+            'total_today' => Queue::whereDate('created_at', today())->count(),
+            'waiting' => Queue::where('status', 'waiting')->count(),
+            'serving' => Queue::where('status', 'serving')->count(),
+            'completed' => Queue::where('status', 'completed')->count(),
+            'cancelled' => Queue::where('status', 'cancelled')->count(),
+        ];
+
+        return view('admin.queue.analytics', compact('analytics'));
     }
 
-    public function update(Request $request, Queue $queue)
+    public function tracking()
     {
-        // Implementation coming soon
-    }
+        $activeQueues = Queue::whereIn('status', ['waiting', 'serving'])
+            ->orderBy('created_at', 'asc')
+            ->get();
 
-    public function destroy(Queue $queue)
-    {
-        // Implementation coming soon
+        return view('admin.queue.tracking', compact('activeQueues'));
     }
 }

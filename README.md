@@ -64,3 +64,15 @@ If you discover a security vulnerability within Laravel, please send an e-mail t
 ## License
 
 The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+
+## Storage Setup
+
+The application requires write permissions for the following directories:
+- storage/
+- bootstrap/cache/
+- public/storage/
+
+After installation, run:
+
+```bash
+php artisan storage

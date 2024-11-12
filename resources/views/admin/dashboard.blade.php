@@ -1,164 +1,209 @@
 @extends('layouts.admin')
 
 @section('header')
-    Dashboard
+    <span class="text-gray-900 dark:text-white">Dashboard</span>
 @endsection
 
 @section('content')
-    @if(!auth()->guard('admin')->user()->setup_completed)
-        @include('admin.setup-wizard')
-    @else
-        <div class="space-y-6">
-            <!-- Top Bar with Time and Dark Mode Toggle -->
-            <div class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow flex justify-between items-center">
-                <h2 class="text-xl font-semibold text-gray-800 dark:text-gray-200">
-                    Good {{ now()->format('H') < 12 ? 'Morning' : (now()->format('H') < 17 ? 'Afternoon' : 'Evening') }},
-                    {{ auth()->guard('admin')->user()->name }}
-                </h2>
-                <div class="flex items-center space-x-4">
-                    <!-- Time Display -->
-                    <div id="time" class="text-lg font-semibold text-gray-600 dark:text-gray-400"></div>
-                    <!-- Dark Mode Toggle -->
-                    <button id="darkModeToggle" class="text-gray-600 dark:text-gray-400">
-                        <svg id="darkModeIcon" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m8.66-8.66h-1M4.34 12H3m15.66 4.66l-.7-.7M6.34 6.34l-.7-.7m12.02 12.02l-.7-.7M6.34 17.66l-.7-.7M12 5a7 7 0 100 14 7 7 0 000-14z"></path>
-                        </svg>
-                    </button>
-                </div>
+<div class="space-y-6">
+    <!-- Greeting -->
+    <div class="text-gray-900 dark:text-white">
+        Good {{ now()->format('A') }}, {{ auth()->guard('admin')->user()->name }}
+    </div>
+
+    <!-- Stats Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <!-- KYC Applications by Location -->
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
+            <h3 class="text-lg font-semibold mb-4 text-gray-900 dark:text-white">KYC Applications by Location</h3>
+            <div class="relative" style="height: 300px;">
+                <canvas id="locationChart"></canvas>
             </div>
-
-            <!-- Analytics Dashboard -->
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <!-- KYC Applications by Location -->
-                <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
-                    <h3 class="text-lg font-semibold mb-4 text-gray-800 dark:text-white">KYC Applications by Location</h3>
-                    <div id="locationChart"></div>
-                </div>
-
-                <!-- KYC Applications by Age -->
-                <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
-                    <h3 class="text-lg font-semibold mb-4 text-gray-800 dark:text-white">KYC Applications by Age</h3>
-                    <div id="ageChart"></div>
-                </div>
-
-                <!-- KYC Applications by Gender -->
-                <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
-                    <h3 class="text-lg font-semibold mb-4 text-gray-800 dark:text-white">KYC Applications by Gender</h3>
-                    <div id="genderChart"></div>
-                </div>
-            </div>
-
-            <!-- Recent Activities -->
-            <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
-                <h3 class="text-lg font-semibold mb-4 text-gray-800 dark:text-white">Recent Activities</h3>
-                <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                        <thead class="bg-gray-50 dark:bg-gray-700">
-                            <tr>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Time</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Customer</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Service</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Status</th>
-                            </tr>
-                        </thead>
-                        <tbody class="bg-white divide-y divide-gray-200 dark:bg-gray-800 dark:divide-gray-700">
-                            @foreach($recentActivities as $activity)
-                                <tr>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                                        {{ $activity->created_at->format('H:i') }}
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
-                                        {{ $activity->customer_name }}
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                                        {{ $activity->service }}
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full
-                                            @if($activity->status == 'completed') bg-green-100 text-green-800
-                                            @elseif($activity->status == 'in_progress') bg-yellow-100 text-yellow-800
-                                            @else bg-red-100 text-red-800 @endif">
-                                            {{ ucfirst($activity->status) }}
-                                        </span>
-                                    </td>
-                                </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
-                </div>
+            <div class="mt-4 flex flex-wrap gap-2">
+                <span class="inline-flex items-center text-sm text-gray-600 dark:text-gray-300">
+                    <span class="w-3 h-3 inline-block mr-1 rounded-full bg-indigo-400"></span>
+                    Freetown
+                </span>
+                <span class="inline-flex items-center text-sm text-gray-600 dark:text-gray-300">
+                    <span class="w-3 h-3 inline-block mr-1 rounded-full bg-blue-400"></span>
+                    Makeni
+                </span>
+                <span class="inline-flex items-center text-sm text-gray-600 dark:text-gray-300">
+                    <span class="w-3 h-3 inline-block mr-1 rounded-full bg-purple-400"></span>
+                    Kabala
+                </span>
+                <span class="inline-flex items-center text-sm text-gray-600 dark:text-gray-300">
+                    <span class="w-3 h-3 inline-block mr-1 rounded-full bg-pink-400"></span>
+                    Pujun
+                </span>
             </div>
         </div>
 
-        @push('scripts')
-        <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
-        <script>
-            // Time Display
-            function updateTime() {
-                const timeElement = document.getElementById('time');
-                const now = new Date();
-                timeElement.textContent = now.toLocaleTimeString();
-            }
-            setInterval(updateTime, 1000);
-            updateTime();
+        <!-- KYC Applications by Age -->
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
+            <h3 class="text-lg font-semibold mb-4 text-gray-900 dark:text-white">KYC Applications by Age</h3>
+            <div class="relative" style="height: 300px;">
+                <canvas id="ageChart"></canvas>
+            </div>
+        </div>
 
-            // Dark Mode Toggle
-            const darkModeToggle = document.getElementById('darkModeToggle');
-            const darkModeIcon = document.getElementById('darkModeIcon');
-            darkModeToggle.addEventListener('click', () => {
-                document.documentElement.classList.toggle('dark');
-                darkModeIcon.classList.toggle('moon');
-            });
+        <!-- KYC Applications by Gender -->
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
+            <h3 class="text-lg font-semibold mb-4 text-gray-900 dark:text-white">KYC Applications by Gender</h3>
+            <div class="relative" style="height: 300px;">
+                <canvas id="genderChart"></canvas>
+            </div>
+            <div class="mt-4 flex justify-center gap-4">
+                <span class="inline-flex items-center text-sm text-gray-600 dark:text-gray-300">
+                    <span class="w-3 h-3 inline-block mr-1 rounded-full bg-yellow-400"></span>
+                    Male
+                </span>
+                <span class="inline-flex items-center text-sm text-gray-600 dark:text-gray-300">
+                    <span class="w-3 h-3 inline-block mr-1 rounded-full bg-yellow-200"></span>
+                    Female
+                </span>
+            </div>
+        </div>
+    </div>
 
-            // Charts
-            const locationChart = new ApexCharts(document.querySelector("#locationChart"), {
-                series: [{
-                    data: [300, 300, 200, 409]
-                }],
-                chart: {
-                    type: 'pie',
-                    height: 350
-                },
-                labels: ['freetown', 'makenu', 'kabala', 'pujun'],
-                responsive: [{
-                    breakpoint: 480,
-                    options: {
-                        chart: {
-                            width: 200
-                        },
-                        legend: {
-                            position: 'bottom'
-                        }
-                    }
-                }]
-            });
-            locationChart.render();
+    <!-- Recent Applications Table -->
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm">
+        <div class="p-6">
+            <h3 class="text-lg font-semibold mb-4 text-gray-900 dark:text-white">Recent KYC Applications</h3>
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                    <thead>
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Name</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Email</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Status</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Progress</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+                        @foreach($recentApplications as $application)
+                        <tr>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-300">{{ $application->name }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-300">{{ $application->email }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full
+                                    @if($application->status === 'Approved') bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200
+                                    @elseif($application->status === 'Rejected') bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200
+                                    @elseif($application->status === 'In Review') bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200
+                                    @else bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300 @endif">
+                                    {{ $application->status }}
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5">
+                                    <div class="bg-blue-600 h-2.5 rounded-full" style="width: {{ $application->progress }}%"></div>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                <button class="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300">View</button>
+                            </td>
+                        </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
 
-            const ageChart = new ApexCharts(document.querySelector("#ageChart"), {
-                series: [{
-                    data: [200, 300, 250, 150, 100]
-                }],
-                chart: {
-                    type: 'bar',
-                    height: 350
-                },
-                xaxis: {
-                    categories: ['18-25', '26-35', '36-45', '46-55', '56+']
+@push('scripts')
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Get current theme
+    const isDarkMode = document.documentElement.classList.contains('dark');
+    const textColor = isDarkMode ? '#D1D5DB' : '#374151';
+
+    // Location Chart
+    new Chart(document.getElementById('locationChart'), {
+        type: 'pie',
+        data: {
+            labels: ['Freetown', 'Makeni', 'Kabala', 'Pujun'],
+            datasets: [{
+                data: [300, 200, 409, 300],
+                backgroundColor: ['#818cf8', '#60a5fa', '#a78bfa', '#f472b6']
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
                 }
-            });
-            ageChart.render();
+            }
+        }
+    });
 
-            const genderChart = new ApexCharts(document.querySelector("#genderChart"), {
-                series: [420, 540],
-                chart: {
-                    type: 'pie',
-                    height: 350
+    // Age Chart
+    new Chart(document.getElementById('ageChart'), {
+        type: 'bar',
+        data: {
+            labels: ['18-25', '26-35', '36-45', '46-55', '56+'],
+            datasets: [{
+                data: [200, 300, 250, 100, 100],
+                backgroundColor: '#4ade80'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    max: 300,
+                    ticks: {
+                        color: textColor
+                    },
+                    grid: {
+                        color: isDarkMode ? '#374151' : '#E5E7EB'
+                    }
                 },
-                labels: ['Male', 'Female'],
-                colors: ['#4299E1', '#ED64A6']
-            });
-            genderChart.render();
-        </script>
-        @endpush
-    @endif
+                x: {
+                    ticks: {
+                        color: textColor
+                    },
+                    grid: {
+                        color: isDarkMode ? '#374151' : '#E5E7EB'
+                    }
+                }
+            }
+        }
+    });
+
+    // Gender Chart
+    new Chart(document.getElementById('genderChart'), {
+        type: 'pie',
+        data: {
+            labels: ['Male', 'Female'],
+            datasets: [{
+                data: [540, 420],
+                backgroundColor: ['#fbbf24', '#fde68a']
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            }
+        }
+    });
+});
+</script>
+@endpush
 @endsection
 

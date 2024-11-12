@@ -3,33 +3,30 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\Queue;
-use App\Models\Customer;
-use Carbon\Carbon;
+use App\Models\KycApplication;
+use Illuminate\Http\Request;
 
 class DashboardController extends Controller
 {
     public function index()
     {
-        $admin = auth()->guard('admin')->user();
+        // Sample data - replace with actual data from your database
+        $recentApplications = [
+            (object)[
+                'name' => 'John Doe',
+                'email' => 'john@example.com',
+                'status' => 'Pending',
+                'progress' => 25
+            ],
+            (object)[
+                'name' => 'Jane Smith',
+                'email' => 'jane@example.com',
+                'status' => 'Approved',
+                'progress' => 100
+            ],
+            // Add more sample data as needed
+        ];
 
-        if (!$admin->setup_completed) {
-            return view('admin.dashboard');
-        }
-
-        $recentActivities = Queue::with('customer')
-            ->latest()
-            ->take(10)
-            ->get()
-            ->map(function ($queue) {
-                return (object)[
-                    'created_at' => $queue->created_at,
-                    'customer_name' => $queue->customer->name,
-                    'service' => $queue->service_type,
-                    'status' => $queue->status
-                ];
-            });
-
-        return view('admin.dashboard', compact('recentActivities'));
+        return view('admin.dashboard', compact('recentApplications'));
     }
 }

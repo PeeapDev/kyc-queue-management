@@ -114,6 +114,16 @@ Route::middleware(['web', 'auth:admin'])->prefix('admin')->name('admin.')->group
 
     // SMTP routes
     Route::put('/settings/smtp', [SettingsController::class, 'updateSmtp'])->name('settings.smtp.update');
+
+    // Queue routes
+    Route::prefix('queue')->name('queue.')->group(function () {
+        Route::get('/', [QueueController::class, 'index'])->name('list');
+        Route::get('/create', [QueueController::class, 'create'])->name('create');
+        Route::post('/store', [QueueController::class, 'store'])->name('store');
+        Route::put('/{queue}/status', [QueueController::class, 'updateStatus'])->name('update-status');
+        Route::get('/analytics', [QueueController::class, 'analytics'])->name('analytics');
+        Route::get('/tracking', [QueueController::class, 'tracking'])->name('tracking');
+    });
 });
 
 // Regular user routes

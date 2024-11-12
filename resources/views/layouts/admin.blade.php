@@ -1,5 +1,7 @@
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" x-data="{ darkMode: localStorage.getItem('darkMode') === 'true' }"
+      x-init="$watch('darkMode', val => localStorage.setItem('darkMode', val))"
+      :class="{ 'dark': darkMode }">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -16,7 +18,7 @@
 
     <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
 </head>
-<body class="font-sans antialiased" x-data>
+<body class="font-sans antialiased">
     <div class="min-h-screen bg-gray-50 dark:bg-gray-900">
         <!-- Sidebar -->
         <aside class="fixed inset-y-0 left-0 bg-white dark:bg-gray-800 shadow-lg w-64 hidden md:block">
@@ -24,7 +26,7 @@
                 <!-- Logo -->
                 <div class="flex items-center justify-center h-16 bg-blue-600">
                     @if(isset($settings) && $settings->logo)
-                        <img src="{{ Storage::disk('public')->url($settings->logo) }}"
+                        <img src="{{ asset('storage/' . $settings->logo) }}"
                              alt="{{ $settings->site_title ?? config('app.name') }}"
                              class="h-12 w-auto">
                     @else
@@ -32,13 +34,32 @@
                     @endif
                 </div>
 
+                <!-- Add this temporarily for debugging -->
+                @if(isset($settings) && $settings->logo)
+                    <!-- Debug info -->
+                    <div class="hidden">
+                        Raw path: {{ $settings->logo }}<br>
+                        Storage URL: {{ Storage::disk('public')->url($settings->logo) }}<br>
+                        Asset URL: {{ asset('storage/' . $settings->logo) }}
+                    </div>
+                @endif
+
                 <!-- Navigation -->
                 <nav class="flex-1 px-2 py-4 space-y-2">
+                    <!-- Dashboard Link -->
                     <a href="{{ route('admin.dashboard') }}" class="flex items-center px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
                         <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
                         </svg>
-                        Home
+                        Dashboard
+                    </a>
+
+                    <!-- Queue Link -->
+                    <a href="{{ route('admin.queue.list') }}" class="flex items-center px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
+                        <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path>
+                        </svg>
+                        Queue
                     </a>
 
                     <a href="{{ route('admin.counters.index') }}" class="flex items-center px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
@@ -148,13 +169,37 @@
                             @yield('header')
                         </h2>
 
-                        <!-- Mobile Menu Button -->
-                        <button type="button" class="md:hidden inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500">
-                            <span class="sr-only">Open main menu</span>
-                            <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
-                            </svg>
-                        </button>
+                        <div class="flex items-center space-x-4">
+                            <!-- Current Time -->
+                            <div class="text-blue-600 dark:text-blue-400 text-xl font-bold tracking-wide" x-data="clock()" x-init="startClock()">
+                                <span x-text="time"></span>
+                            </div>
+
+                            <!-- Dark Mode Toggle -->
+                            <button @click="darkMode = !darkMode"
+                                    class="p-2 text-gray-500 dark:text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+                                <!-- Sun icon -->
+                                <svg x-show="darkMode" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                          d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z">
+                                    </path>
+                                </svg>
+                                <!-- Moon icon -->
+                                <svg x-show="!darkMode" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                          d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z">
+                                    </path>
+                                </svg>
+                            </button>
+
+                            <!-- Mobile Menu Button -->
+                            <button type="button" class="md:hidden inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500">
+                                <span class="sr-only">Open main menu</span>
+                                <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                                </svg>
+                            </button>
+                        </div>
                     </div>
                 </div>
             </header>
@@ -170,6 +215,21 @@
 
     @stack('modals')
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+
+    <!-- Clock functionality -->
+    <script>
+        function clock() {
+            return {
+                time: new Date().toLocaleTimeString(),
+                startClock() {
+                    setInterval(() => {
+                        this.time = new Date().toLocaleTimeString();
+                    }, 1000);
+                }
+            }
+        }
+    </script>
+
     @stack('scripts')
 </body>
 </html>
